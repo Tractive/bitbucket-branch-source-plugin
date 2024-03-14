@@ -48,8 +48,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -125,8 +125,8 @@ public class BranchScanningTest {
 
         // Only branch1 and my-feature-branch PR must be observed
         assertEquals(2, observer.getBranches().size());
-        assertEquals("branch1", observer.getBranches().get(0));
-        assertEquals("PR-23", observer.getBranches().get(1));
+        assertEquals("PR-23", observer.getBranches().get(0));
+        assertEquals("branch1", observer.getBranches().get(1));
     }
 
     @Test
