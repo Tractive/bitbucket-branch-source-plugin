@@ -134,7 +134,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     private static final int MAX_AVATAR_LENGTH = 16384;
     private static final int MAX_PAGE_LENGTH = 100;
     private static final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
-    private CloseableHttpClient client;
+    private final CloseableHttpClient client;
     private HttpClientContext context;
     private final String owner;
     private final String projectKey;
@@ -879,17 +879,17 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     }
 
     @Restricted(ProtectedExternally.class)
-    protected CloseableHttpResponse executeMethod(HttpRequestBase httpMethod) throws InterruptedException, IOException {
-        return executeMethod(API_HOST, httpMethod);
+    protected CloseableHttpResponse executeMethod(HttpRequestBase httpRequest) throws InterruptedException, IOException {
+        return executeMethod(API_HOST, httpRequest);
     }
 
     @Restricted(ProtectedExternally.class)
-    protected CloseableHttpResponse executeMethod(HttpHost host, HttpRequestBase httpMethod) throws InterruptedException, IOException {
+    protected CloseableHttpResponse executeMethod(HttpHost host, HttpRequestBase httpRequest) throws InterruptedException, IOException {
         HttpClientContext requestContext = null;
         if (API_HOST.equals(host)) {
             requestContext = context;
             if (authenticator != null) {
-                authenticator.configureRequest(httpMethod);
+                authenticator.configureRequest(httpRequest);
             }
         }
 
@@ -900,12 +900,12 @@ public class BitbucketCloudApiClient implements BitbucketApi {
         requestConfig.setConnectionRequestTimeout(Integer.parseInt(connectionRequestTimeout) * 1000);
         String socketTimeout = System.getProperty("http.socket.timeout", "60");
         requestConfig.setSocketTimeout(Integer.parseInt(socketTimeout) * 1000);
-        httpMethod.setConfig(requestConfig.build());
+        httpRequest.setConfig(requestConfig.build());
 
-        CloseableHttpResponse response = client.execute(host, httpMethod, requestContext);
+        CloseableHttpResponse response = client.execute(host, httpRequest, requestContext);
         int retryCount = 0;
         while (response.getStatusLine().getStatusCode() == API_RATE_LIMIT_CODE) {
-            release(httpMethod);
+            release(httpRequest);
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
@@ -913,11 +913,11 @@ public class BitbucketCloudApiClient implements BitbucketApi {
                 TODO: When bitbucket starts supporting rate limit expiration time, remove 5 sec wait and put code
                       to wait till expiration time is over. It should also fix the wait for ever loop.
              */
-            LOGGER.log(Level.FINE, "Bitbucket Cloud API rate limit reached for {0}, sleeping for 5 sec then retry...", httpMethod.getURI());
+            LOGGER.log(Level.FINE, "Bitbucket Cloud API rate limit reached for {0}, sleeping for 5 sec then retry...", httpRequest.getURI());
             Thread.sleep(5000);
             retryCount++;
-            LOGGER.log(Level.FINE, "Retrying Bitbucket Cloud API request for {0}, retryCount={1}", new Object[]{httpMethod.getURI(), retryCount});
-            response = client.execute(host, httpMethod, requestContext);
+            LOGGER.log(Level.FINE, "Retrying Bitbucket Cloud API request for {0}, retryCount={1}", new Object[]{httpRequest.getURI(), retryCount});
+            response = client.execute(host, httpRequest, requestContext);
         }
         return response;
     }
@@ -933,7 +933,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
         try {
             URI uri = new URI(path);
             if (uri.isAbsolute() && ! uri.isOpaque()) {
-                host = HttpHost.create(""+uri.getScheme()+"://"+uri.getAuthority());
+                host = HttpHost.create(uri.getScheme()+"://"+uri.getAuthority());
             }
         } catch (URISyntaxException ex) {
         }

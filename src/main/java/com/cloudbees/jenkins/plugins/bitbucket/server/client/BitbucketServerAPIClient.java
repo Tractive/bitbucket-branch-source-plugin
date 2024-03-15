@@ -1282,15 +1282,15 @@ public class BitbucketServerAPIClient implements BitbucketApi {
         return content;
     }
 
-    private CloseableHttpResponse executeMethod(CloseableHttpClient client, HttpRequestBase httpMethod) throws IOException, InterruptedException {
-        CloseableHttpResponse response = executeMethodNoRetry(client, httpMethod, context);
+    private CloseableHttpResponse executeMethod(CloseableHttpClient client, HttpRequestBase httpRequest) throws IOException, InterruptedException {
+        CloseableHttpResponse response = executeMethodNoRetry(client, httpRequest, context);
         Instant start = Instant.now();
         Instant forcedEnd = start.plus(API_RATE_LIMIT_MAX_SLEEP);
         Duration sleepDuration = API_RATE_LIMIT_INITIAL_SLEEP;
         while (response.getStatusLine().getStatusCode() == API_RATE_LIMIT_STATUS_CODE
                 && Instant.now().plus(sleepDuration).isBefore(forcedEnd)) {
             response.close();
-            httpMethod.releaseConnection();
+            httpRequest.releaseConnection();
             /*
              * TODO: If The Bitbucket Server API ever starts sending rate limit expiration time, we should
              * change this to a more precise sleep.
@@ -1302,15 +1302,15 @@ public class BitbucketServerAPIClient implements BitbucketApi {
             // Duration increases exponentially: 5s, 7s, 10s, 15s, 22s, ... 6m6s, 9m9s.
             // We will retry at most 13 times and sleep for roughly 27 minutes.
             sleepDuration = Duration.ofSeconds((int)(sleepDuration.getSeconds() * 1.5));
-            response = executeMethodNoRetry(client, httpMethod, context);
+            response = executeMethodNoRetry(client, httpRequest, context);
         }
         return response;
     }
 
     // Exists just so it can be mocked in BitbucketIntegrationClientFactory.
     @Restricted(ProtectedExternally.class)
-    protected CloseableHttpResponse executeMethodNoRetry(CloseableHttpClient client, HttpRequestBase httpMethod, HttpClientContext context) throws IOException, InterruptedException {
-        return client.execute(httpMethod, context);
+    protected CloseableHttpResponse executeMethodNoRetry(CloseableHttpClient client, HttpRequestBase httpRequest, HttpClientContext context) throws IOException, InterruptedException {
+        return client.execute(httpRequest, context);
     }
 
 }

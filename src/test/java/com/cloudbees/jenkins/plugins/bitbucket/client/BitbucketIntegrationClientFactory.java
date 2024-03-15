@@ -48,7 +48,7 @@ public class BitbucketIntegrationClientFactory {
     public interface IRequestAudit {
         default void request(String url) {
             // mockito audit
-        };
+        }
 
         IRequestAudit getAudit();
 
@@ -112,12 +112,12 @@ public class BitbucketIntegrationClientFactory {
         }
 
         @Override
-        protected CloseableHttpResponse executeMethodNoRetry(CloseableHttpClient client, HttpRequestBase httpMethod, HttpClientContext context) throws IOException {
+        protected CloseableHttpResponse executeMethodNoRetry(CloseableHttpClient client, HttpRequestBase httpRequest, HttpClientContext context) throws IOException {
             if (rateLimitNextRequest) {
                 rateLimitNextRequest = false;
                 return createRateLimitResponse();
             }
-            String path = httpMethod.getURI().toString();
+            String path = httpRequest.getURI().toString();
             path = path.substring(path.indexOf("/rest/api/"));
             audit.request(path);
 
@@ -141,7 +141,7 @@ public class BitbucketIntegrationClientFactory {
         private final IRequestAudit audit;
 
         private BitbucketClouldIntegrationClient(String payloadRootPath, String owner, String repositoryName) {
-            super(false, 0, 0, owner, null, repositoryName, (BitbucketAuthenticator) null);
+            super(false, 0, 0, owner, null, repositoryName, null);
 
             if (payloadRootPath == null) {
                 this.payloadRootPath = PAYLOAD_RESOURCE_ROOTPATH;
@@ -158,8 +158,8 @@ public class BitbucketIntegrationClientFactory {
         }
 
         @Override
-        protected CloseableHttpResponse executeMethod(HttpHost host, HttpRequestBase httpMethod) throws InterruptedException, IOException {
-            String path = httpMethod.getURI().toString();
+        protected CloseableHttpResponse executeMethod(HttpHost host, HttpRequestBase httpRequest) throws InterruptedException, IOException {
+            String path = httpRequest.getURI().toString();
             audit.request(path);
 
             String payloadPath = path.replace(API_ENDPOINT, "").replace('/', '-').replaceAll("[=%&?]", "_");
