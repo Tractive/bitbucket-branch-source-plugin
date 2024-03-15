@@ -84,7 +84,7 @@ public class BitbucketSCMSourcePushHookReceiver extends CrumbExclusion implement
         }
         HookEventType type = HookEventType.fromString(eventKey);
         if (type == null) {
-            LOGGER.info("Received unknown Bitbucket hook: " + eventKey + ". Skipping.");
+            LOGGER.log(Level.INFO, "Received unknown Bitbucket hook: {0}. Skipping.", eventKey);
             return HttpResponses.error(HttpServletResponse.SC_BAD_REQUEST, "X-Event-Key HTTP header invalid: " + eventKey);
         }
 
@@ -95,10 +95,10 @@ public class BitbucketSCMSourcePushHookReceiver extends CrumbExclusion implement
             instanceType = BitbucketType.fromString(bitbucketKey);
         }
         if (instanceType == null && serverUrl != null) {
-            LOGGER.log(Level.FINE, "server_url request parameter found. Bitbucket Native Server webhook incoming.");
+            LOGGER.log(Level.FINE, "Received webhook event {0}. X-Bitbucket-Type header / server_url request parameter found. Bitbucket Native Server webhook incoming.", eventKey);
             instanceType = BitbucketType.SERVER;
         } else {
-            LOGGER.log(Level.FINE, "X-Bitbucket-Type header / server_url request parameter not found. Bitbucket Cloud webhook incoming.");
+            LOGGER.log(Level.FINE, "Received webhook event {0}. X-Bitbucket-Type header / server_url request parameter not found. Bitbucket Cloud webhook incoming.", eventKey);
         }
 
         try {
