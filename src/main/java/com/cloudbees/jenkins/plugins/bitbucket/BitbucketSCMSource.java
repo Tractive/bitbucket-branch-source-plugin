@@ -79,6 +79,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.authentication.tokens.api.AuthenticationTokens;
@@ -253,6 +254,15 @@ public class BitbucketSCMSource extends SCMSource {
         this.repoOwner = repoOwner;
         this.repository = repository;
         this.traits = new ArrayList<>();
+        setLogger();
+    }
+
+    private void setLogger() {
+        LogFormatter formatter = new LogFormatter();
+        Handler[] handlers = LOGGER.getHandlers();
+        for (Handler handler : handlers) {
+            handler.setFormatter(formatter);
+        }
     }
 
     /**
