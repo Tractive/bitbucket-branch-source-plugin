@@ -135,6 +135,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     private static final int MAX_PAGE_LENGTH = 100;
     private static final int MAX_RETRIES = 7;
     private static final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+    public static final int RETRY_DURATION_BASE_MILLIS = 5000;
     private final CloseableHttpClient client;
     private HttpClientContext context;
     private final String owner;
@@ -914,7 +915,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
                 TODO: When bitbucket starts supporting rate limit expiration time, remove 5 sec wait and put code
                       to wait till expiration time is over. It should also fix the wait for ever loop.
              */
-            long sleepTime = 5000 * (long)Math.pow(2, retryCount);
+            long sleepTime = RETRY_DURATION_BASE_MILLIS * (long)Math.pow(2, retryCount);
             LOGGER.log(Level.FINE, "Bitbucket Cloud API rate limit reached for {0}, sleeping for {1} sec then retry...", new Object[]{httpMethod.getURI(), sleepTime});
             Thread.sleep(sleepTime);
             retryCount++;
