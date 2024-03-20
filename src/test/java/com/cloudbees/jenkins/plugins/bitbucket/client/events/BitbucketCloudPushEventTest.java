@@ -23,13 +23,19 @@
  */
 package com.cloudbees.jenkins.plugins.bitbucket.client.events;
 
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketHref;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketPushEvent;
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketRepository;
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketRepositoryOwner;
 import com.cloudbees.jenkins.plugins.bitbucket.client.BitbucketCloudWebhookPayload;
 import com.cloudbees.jenkins.plugins.bitbucket.client.DateUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
+import org.joda.time.Instant;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,6 +57,39 @@ public class BitbucketCloudPushEventTest {
         try (InputStream is = getClass().getResourceAsStream(getClass().getSimpleName() + "/" + testName.getMethodName() + ".json")) {
             payload = IOUtils.toString(is, "UTF-8");
         }
+    }
+
+    @Test
+    public void closePayload() {
+        BitbucketPushEvent event = BitbucketCloudWebhookPayload.pushEventFromPayload(payload);
+        final BitbucketRepository repository = event.getRepository();
+        assertThat(repository, notNullValue());
+        assertThat(repository.getScm(), is("git"));
+        assertThat(repository.getFullName(), is("cloudbeers/temp"));
+        final BitbucketRepositoryOwner owner = repository.getOwner();
+        assertThat(owner.getDisplayName(), is("cloudbeers"));
+        assertThat(owner.getUsername(), is("cloudbeers"));
+        assertThat(repository.getRepositoryName(), is("temp"));
+        assertThat(repository.isPrivate(), is(true));
+        final Map<String, List<BitbucketHref>> links = repository.getLinks();
+        assertThat(links, notNullValue());
+        assertThat(links.get("self"), notNullValue());
+        assertThat(links.get("self").get(0).getHref(),
+                is("https://api.bitbucket.org/2.0/repositories/cloudbeers/temp"));
+        assertThat(event.getChanges().size(), is(1));
+        BitbucketPushEvent.Change change = event.getChanges().get(0);
+        assertThat(change.getNew(), nullValue());
+        assertThat(change.isCreated(), is(false));
+        assertThat(change.isClosed(), is(true));
+        final BitbucketPushEvent.Reference changeOld = change.getOld();
+        assertThat(changeOld, notNullValue());
+        assertThat(changeOld.getName(), is("main"));
+        assertThat(changeOld.getType(), is("branch"));
+        final BitbucketPushEvent.Target target = changeOld.getTarget();
+        assertThat(target, notNullValue());
+        assertThat(target.getHash(), is("501bf5b99365d1d870882254b9360c17172bda0e"));
+        assertThat(target.getDate(), is(Instant.parse("2017-03-03T17:10:55+00:00").toDate()));
+
     }
 
     @Test

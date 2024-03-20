@@ -23,16 +23,21 @@
  */
 package com.cloudbees.jenkins.plugins.bitbucket.client.events;
 
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketPushEvent;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketRepository;
+import com.cloudbees.jenkins.plugins.bitbucket.client.branch.BitbucketCloudBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.client.repository.BitbucketCloudRepository;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class BitbucketCloudPushEvent implements BitbucketPushEvent {
+    public static final Logger LOGGER = Logger.getLogger(BitbucketCloudPushEvent.class.getName());
 
     private BitbucketCloudRepository repository;
 
@@ -51,13 +56,38 @@ public class BitbucketCloudPushEvent implements BitbucketPushEvent {
     @Override
     public List<ChangeImpl> getChanges() {
         return push == null || push.changes == null
-                ? Collections.<ChangeImpl>emptyList()
-                : Collections.unmodifiableList(push.changes);
+            ? Collections.emptyList()
+            : Collections.unmodifiableList(push.changes);
     }
 
     public void setChanges(List<ChangeImpl> changes) {
         this.push = new Push();
         this.push.changes = changes != null ? new ArrayList<>(changes) : new ArrayList<>();
+    }
+
+    @JsonIgnore
+    @Override
+    public List<BitbucketBranch> getBranches() {
+        final List<BitbucketBranch> bitbucketBranches = new ArrayList<>();
+
+        for (ChangeImpl change : push.changes) {
+            final ReferenceImpl reference = change.getNew();
+            if (reference == null) {
+                LOGGER.finest("Skipping event as it has no `new` changes associated with it");
+                continue;
+            }
+
+            final TargetImpl target = reference.getTarget();
+            final BitbucketCloudBranch branch = new BitbucketCloudBranch(
+                reference.getName(),
+                target.getHash(),
+                target.getDate().getTime()
+            );
+
+            bitbucketBranches.add(branch);
+        }
+
+        return bitbucketBranches;
     }
 
     public static class Push {

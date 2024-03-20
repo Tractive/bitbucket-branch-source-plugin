@@ -1,5 +1,6 @@
 package com.cloudbees.jenkins.plugins.bitbucket.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
 import java.util.List;
 
@@ -13,6 +14,9 @@ public interface BitbucketPushEvent {
     BitbucketRepository getRepository();
 
     List<? extends Change> getChanges();
+
+    @JsonIgnore
+    List<BitbucketBranch> getBranches();
 
     interface Change {
         Reference getNew();

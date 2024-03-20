@@ -40,6 +40,7 @@ import com.cloudbees.jenkins.plugins.bitbucket.client.repository.UserRoleInRepos
 import com.cloudbees.jenkins.plugins.bitbucket.endpoints.AbstractBitbucketEndpoint;
 import com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketCloudEndpoint;
 import com.cloudbees.jenkins.plugins.bitbucket.endpoints.BitbucketEndpointConfiguration;
+import com.cloudbees.jenkins.plugins.bitbucket.hooks.HasBranches;
 import com.cloudbees.jenkins.plugins.bitbucket.hooks.HasPullRequests;
 import com.cloudbees.plugins.credentials.CredentialsNameProvider;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
@@ -579,6 +580,10 @@ public class BitbucketSCMSource extends SCMSource {
                     @Override
                     protected Iterable<BitbucketBranch> create() {
                         try {
+                            if (event instanceof HasBranches) {
+                                return getBitbucketBranchFromEvent((HasBranches) event, listener);
+                            }
+
                             return (Iterable<BitbucketBranch>) buildBitbucketClient().getBranches();
                         } catch (IOException | InterruptedException e) {
                             throw new BitbucketSCMSource.WrappedException(e);
@@ -615,6 +620,16 @@ public class BitbucketSCMSource extends SCMSource {
         } catch (WrappedException e) {
             e.unwrap();
         }
+    }
+
+    private Iterable<BitbucketBranch> getBitbucketBranchFromEvent(@NonNull HasBranches event, @NonNull TaskListener listener) throws InterruptedException {
+        final Iterable<BitbucketBranch> branches = event.getBranches(BitbucketSCMSource.this);
+
+        for (BitbucketBranch branch : branches) {
+            listener.getLogger().printf("Adding branch %s from event%n", branch.getName());
+        }
+
+        return branches;
     }
 
     private Iterable<BitbucketPullRequest> getBitbucketPullRequestsFromEvent(@NonNull HasPullRequests incomingPrEvent, @NonNull TaskListener listener) {
@@ -687,22 +702,22 @@ public class BitbucketSCMSource extends SCMSource {
                     PullRequestSCMHead head;
                     if (originBitbucket instanceof BitbucketCloudApiClient) {
                         head = new PullRequestSCMHead( //
-                                branchName, //
-                                pullRepoOwner, //
-                                pullRepository, //
-                                originalBranchName, //
-                                pull, //
-                                originOf(pullRepoOwner, pullRepository), //
-                                strategy);
+                            branchName, //
+                            pullRepoOwner, //
+                            pullRepository, //
+                            originalBranchName, //
+                            pull, //
+                            originOf(pullRepoOwner, pullRepository), //
+                            strategy);
                     } else {
                         head = new PullRequestSCMHead( //
-                                branchName, //
-                                repoOwner, //
-                                repository, //
-                                originalBranchName, //
-                                pull, //
-                                originOf(pullRepoOwner, pullRepository), //
-                                strategy);
+                            branchName, //
+                            repoOwner, //
+                            repository, //
+                            originalBranchName, //
+                            pull, //
+                            originOf(pullRepoOwner, pullRepository), //
+                            strategy);
                     }
                     if (request.process(head, //
                         () -> {
@@ -1027,17 +1042,17 @@ public class BitbucketSCMSource extends SCMSource {
                 }
             } catch (IOException | InterruptedException e) {
                 LOGGER.log(Level.SEVERE,
-                        "Could not determine clone links of " + getRepoOwner() + "/" + getRepository()
-                                + " on " + getServerUrl() + " for " + getOwner() + " falling back to generated links",
-                        e);
+                    "Could not determine clone links of " + getRepoOwner() + "/" + getRepository()
+                        + " on " + getServerUrl() + " for " + getOwner() + " falling back to generated links",
+                    e);
                 cloneLinks = new ArrayList<>();
                 cloneLinks.add(new BitbucketHref("ssh",
-                        bitbucket.getRepositoryUri(BitbucketRepositoryProtocol.SSH, null,
-                            getRepoOwner(), getRepository())
+                    bitbucket.getRepositoryUri(BitbucketRepositoryProtocol.SSH, null,
+                        getRepoOwner(), getRepository())
                 ));
                 cloneLinks.add(new BitbucketHref("https",
-                        bitbucket.getRepositoryUri(BitbucketRepositoryProtocol.HTTP, null,
-                            getRepoOwner(), getRepository())
+                    bitbucket.getRepositoryUri(BitbucketRepositoryProtocol.HTTP, null,
+                        getRepoOwner(), getRepository())
                 ));
             }
         }
@@ -1312,10 +1327,10 @@ public class BitbucketSCMSource extends SCMSource {
             serverUrl = StringUtils.defaultIfBlank(serverUrl, serverUrlFallback);
             ListBoxModel result = new ListBoxModel();
             StandardCredentials credentials = BitbucketCredentials.lookupCredentials(
-                    serverUrl,
-                    context,
-                    credentialsId,
-                    StandardCredentials.class
+                serverUrl,
+                context,
+                credentialsId,
+                StandardCredentials.class
             );
 
             BitbucketAuthenticator authenticator = AuthenticationTokens.convert(BitbucketAuthenticator.authenticationContext(serverUrl), credentials);
@@ -1324,7 +1339,7 @@ public class BitbucketSCMSource extends SCMSource {
                 BitbucketApi bitbucket = BitbucketApiFactory.newInstance(serverUrl, authenticator, repoOwner, null, null);
                 BitbucketTeam team = bitbucket.getTeam();
                 List<? extends BitbucketRepository> repositories =
-                        bitbucket.getRepositories(team != null ? null : UserRoleInRepository.CONTRIBUTOR);
+                    bitbucket.getRepositories(team != null ? null : UserRoleInRepository.CONTRIBUTOR);
                 if (repositories.isEmpty()) {
                     throw FormFillFailure.error(Messages.BitbucketSCMSource_NoMatchingOwner(repoOwner)).withSelectionCleared();
                 }
@@ -1338,14 +1353,14 @@ public class BitbucketSCMSource extends SCMSource {
                 if (e instanceof BitbucketRequestException) {
                     if (((BitbucketRequestException) e).getHttpCode() == 401) {
                         throw FormFillFailure.error(credentials == null
-                                ? Messages.BitbucketSCMSource_UnauthorizedAnonymous(repoOwner)
-                                : Messages.BitbucketSCMSource_UnauthorizedOwner(repoOwner)).withSelectionCleared();
+                            ? Messages.BitbucketSCMSource_UnauthorizedAnonymous(repoOwner)
+                            : Messages.BitbucketSCMSource_UnauthorizedOwner(repoOwner)).withSelectionCleared();
                     }
                 } else if (e.getCause() instanceof BitbucketRequestException) {
                     if (((BitbucketRequestException) e.getCause()).getHttpCode() == 401) {
                         throw FormFillFailure.error(credentials == null
-                                ? Messages.BitbucketSCMSource_UnauthorizedAnonymous(repoOwner)
-                                : Messages.BitbucketSCMSource_UnauthorizedOwner(repoOwner)).withSelectionCleared();
+                            ? Messages.BitbucketSCMSource_UnauthorizedAnonymous(repoOwner)
+                            : Messages.BitbucketSCMSource_UnauthorizedOwner(repoOwner)).withSelectionCleared();
                     }
                 }
                 LOGGER.log(Level.SEVERE, e.getMessage(), e);

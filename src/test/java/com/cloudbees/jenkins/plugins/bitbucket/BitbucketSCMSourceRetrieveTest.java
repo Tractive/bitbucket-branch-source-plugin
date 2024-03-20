@@ -62,8 +62,9 @@ public class BitbucketSCMSourceRetrieveTest {
     private static final String SERVER_REPO_OWNER = "DUB";
     private static final String SERVER_REPO_URL = "https://bitbucket.test";
     private static final String REPO_NAME = "stunning-adventure";
-    private static final String BRANCH_NAME = "branch1";
-    private static final String COMMIT_HASH = "e851558f77c098d21af6bb8cc54a423f7cf12147";
+    private static final String DESTINATION_BRANCH_NAME = "main";
+    private static final String SOURCE_BRANCH_NAME = "branch1";
+    private static final String SOURCE_BRANCH_COMMIT_HASH = "e851558f77c098d21af6bb8cc54a423f7cf12147";
     private static final Integer PR_ID = 1;
 
     @ClassRule
@@ -90,12 +91,12 @@ public class BitbucketSCMSourceRetrieveTest {
     public void setUp() {
         when(prDestination.getRepository()).thenReturn(repository);
         when(prDestination.getBranch()).thenReturn(destinationBranch);
-        when(destinationBranch.getName()).thenReturn("main");
+        when(destinationBranch.getName()).thenReturn(DESTINATION_BRANCH_NAME);
 
-        when(sourceBranch.getName()).thenReturn(BRANCH_NAME);
+        when(sourceBranch.getName()).thenReturn(SOURCE_BRANCH_NAME);
         when(prSource.getRepository()).thenReturn(repository);
         when(prSource.getBranch()).thenReturn(sourceBranch);
-        when(commit.getHash()).thenReturn(COMMIT_HASH);
+        when(commit.getHash()).thenReturn(SOURCE_BRANCH_COMMIT_HASH);
         when(prSource.getCommit()).thenReturn(commit);
 
         when(pullRequest.getSource()).thenReturn(prSource);
@@ -114,7 +115,7 @@ public class BitbucketSCMSourceRetrieveTest {
         BitbucketMockApiFactory.add(BitbucketCloudEndpoint.SERVER_URL, client);
 
         List<BitbucketCloudBranch> branches =
-            Collections.singletonList(new BitbucketCloudBranch(BRANCH_NAME, COMMIT_HASH, 0));
+            Collections.singletonList(new BitbucketCloudBranch(SOURCE_BRANCH_NAME, SOURCE_BRANCH_COMMIT_HASH, 0));
         when(client.getBranches()).thenReturn(branches);
 
         verifyExpectedClientApiCalls(instance, client);
@@ -131,7 +132,7 @@ public class BitbucketSCMSourceRetrieveTest {
         BitbucketMockApiFactory.add(SERVER_REPO_URL, client);
 
         List<BitbucketServerBranch> branches =
-            Collections.singletonList(new BitbucketServerBranch(BRANCH_NAME, COMMIT_HASH));
+            Collections.singletonList(new BitbucketServerBranch(SOURCE_BRANCH_NAME, SOURCE_BRANCH_COMMIT_HASH));
         when(client.getBranches()).thenReturn(branches);
         when(client.getRepository()).thenReturn(repository);
 
@@ -153,7 +154,7 @@ public class BitbucketSCMSourceRetrieveTest {
         when(pullRequest.getLink()).thenReturn(instance.getServerUrl() + '/' + fullRepoName + "/pull-requests/" + PR_ID);
         when(apiClient.getPullRequestById(PR_ID)).thenReturn(pullRequest);
 
-        SCMHeadEvent<?> event = new HeadEvent(Collections.singleton(pullRequest));
+        SCMHeadEvent<?> event = new BitbucketPullRequestSCMHeadEvent(Collections.singleton(pullRequest));
         TaskListener taskListener = BitbucketClientMockUtils.getTaskListenerMock();
         SCMHeadObserver.Collector headObserver = new SCMHeadObserver.Collector();
         when(criteria.isHead(Mockito.any(), Mockito.same(taskListener))).thenReturn(true);
@@ -163,7 +164,7 @@ public class BitbucketSCMSourceRetrieveTest {
         // Expect the observer to collect the branch and the PR
         Set<String> heads =
             headObserver.result().keySet().stream().map(SCMHead::getName).collect(Collectors.toSet());
-        assertThat(heads, Matchers.containsInAnyOrder("PR-1", BRANCH_NAME));
+        assertThat(heads, Matchers.containsInAnyOrder("PR-" + PR_ID, SOURCE_BRANCH_NAME, DESTINATION_BRANCH_NAME));
 
         // Ensures PR is properly initialized, especially fork-based PRs
         // see BitbucketServerAPIClient.setupPullRequest()
@@ -174,10 +175,10 @@ public class BitbucketSCMSourceRetrieveTest {
         verify(apiClient, Mockito.never()).getTags();
     }
 
-    private static final class HeadEvent extends SCMHeadEvent<BitbucketPullRequestEvent> implements HasPullRequests {
+    private static final class BitbucketPullRequestSCMHeadEvent extends SCMHeadEvent<BitbucketPullRequestEvent> implements HasPullRequests {
         private final Collection<BitbucketPullRequest> pullRequests;
 
-        private HeadEvent(Collection<BitbucketPullRequest> pullRequests) {
+        private BitbucketPullRequestSCMHeadEvent(Collection<BitbucketPullRequest> pullRequests) {
             super(Type.UPDATED, 0, mock(BitbucketPullRequestEvent.class), "origin");
             this.pullRequests = pullRequests;
         }
