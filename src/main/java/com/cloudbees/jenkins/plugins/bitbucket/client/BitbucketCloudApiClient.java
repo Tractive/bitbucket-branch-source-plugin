@@ -795,6 +795,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
                 .set("pagelen", MAX_PAGE_LENGTH);
         if (StringUtils.isNotBlank(projectKey)) {
             template.set("q", "project.key=" + "\"" + projectKey + "\""); // q=project.key="<projectKey>"
+            cacheKey.append("::").append(projectKey);
         }
         if (role != null &&  authenticator != null) {
             template.set("role", role.getId());
