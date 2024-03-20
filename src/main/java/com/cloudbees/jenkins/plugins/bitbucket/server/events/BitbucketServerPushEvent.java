@@ -23,16 +23,20 @@
  */
 package com.cloudbees.jenkins.plugins.bitbucket.server.events;
 
+import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketPushEvent;
 import com.cloudbees.jenkins.plugins.bitbucket.api.BitbucketRepository;
+import com.cloudbees.jenkins.plugins.bitbucket.server.client.branch.BitbucketServerBranch;
 import com.cloudbees.jenkins.plugins.bitbucket.server.client.repository.BitbucketServerRepository;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class BitbucketServerPushEvent implements BitbucketPushEvent{
+public class BitbucketServerPushEvent implements BitbucketPushEvent {
 
     private BitbucketServerRepository repository;
 
@@ -51,13 +55,25 @@ public class BitbucketServerPushEvent implements BitbucketPushEvent{
     @Override
     public List<ChangeImpl> getChanges() {
         return push == null || push.changes == null
-                ? Collections.<ChangeImpl>emptyList()
-                : Collections.unmodifiableList(push.changes);
+            ? Collections.emptyList()
+            : Collections.unmodifiableList(push.changes);
     }
 
     public void setChanges(List<ChangeImpl> changes) {
         this.push = new Push();
         this.push.changes = changes != null ? new ArrayList<>(changes) : new ArrayList<>();
+    }
+
+    @JsonIgnore
+    @Override
+    public List<BitbucketBranch> getBranches() {
+        return push.changes
+            .stream()
+            .map(ChangeImpl::getNew)
+            .map(reference -> new BitbucketServerBranch(
+                reference.getName(),
+                reference.getTarget().getHash())
+            ).collect(Collectors.toList());
     }
 
     public static class Push {

@@ -23,6 +23,11 @@
  */
 package com.cloudbees.jenkins.plugins.bitbucket.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents a pull request event coming from Bitbucket (webhooks).
  */
@@ -32,6 +37,20 @@ public interface BitbucketPullRequestEvent {
      * @return the pull request that originates this event.
      */
     BitbucketPullRequest getPullRequest();
+
+    /**
+     * @return the source and destination branch of the pull request that originates this event.
+
+     */
+    @JsonIgnore
+    default List<BitbucketBranch> getBranches() {
+        return Collections.unmodifiableList(
+            Arrays.asList(
+                getPullRequest().getSource().getBranch(),
+                getPullRequest().getDestination().getBranch()
+            )
+        );
+    }
 
     /**
      * @return the destination repository that {@link #getPullRequest()} points to.
