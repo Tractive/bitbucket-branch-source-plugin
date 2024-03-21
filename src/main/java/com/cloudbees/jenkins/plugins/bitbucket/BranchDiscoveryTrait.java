@@ -244,7 +244,8 @@ public class BranchDiscoveryTrait extends SCMSourceTrait {
                 for (BitbucketPullRequest pullRequest : req.getPullRequests()) {
                     BitbucketRepository source = pullRequest.getSource().getRepository();
                     if (fullName.equalsIgnoreCase(source.getFullName())
-                            && pullRequest.getSource().getBranch().getName().equals(head.getName())) {
+                        && pullRequest.getSource().getBranch().getName().equals(head.getName())) {
+                        request.listener().getLogger().printf("    Skipping branch %s as matching pull request %s is available%n", head.getName(), pullRequest.getId());
                         return true;
                     }
                 }
@@ -268,10 +269,11 @@ public class BranchDiscoveryTrait extends SCMSourceTrait {
                 for (BitbucketPullRequest pullRequest : req.getPullRequests()) {
                     BitbucketRepository source = pullRequest.getSource().getRepository();
                     if (fullName.equalsIgnoreCase(source.getFullName())
-                            && pullRequest.getSource().getBranch().getName().equals(head.getName())) {
+                        && pullRequest.getSource().getBranch().getName().equals(head.getName())) {
                         return false;
                     }
                 }
+                request.listener().getLogger().printf("    Skipping branch %s as no matching pull request is available%n", head.getName());
                 return true;
             }
             return false;
