@@ -932,12 +932,12 @@ public class BitbucketCloudApiClient implements BitbucketApi {
                       to wait till expiration time is over. It should also fix the wait for ever loop.
              */
             long sleepTime = RETRY_DURATION_BASE_MILLIS * (long)Math.pow(2, retryCount);
-            LOGGER.log(Level.FINE, "Bitbucket Cloud API rate limit reached for {0}, sleeping for {1} sec then retry...", new Object[]{httpMethod.getURI(), sleepTime});
+            LOGGER.log(Level.FINE, "Bitbucket Cloud API rate limit reached for {0}, sleeping for {1} sec then retry...", new Object[]{httpRequest.getURI(), sleepTime});
             Thread.sleep(sleepTime);
             retryCount++;
             if (retryCount >= MAX_RETRIES) {
-                LOGGER.log(Level.FINE, "Retry limit exceeded: Bitbucket Cloud API request for {0}, retryCount={1}", new Object[]{httpMethod.getURI(), retryCount});
-                throw new RuntimeException("Retry limit exceeded: Bitbucket Cloud API request for "+ httpMethod.getURI() + ", retryCount=" + retryCount);
+                LOGGER.log(Level.FINE, "Retry limit exceeded: Bitbucket Cloud API request for {0}, retryCount={1}", new Object[]{httpRequest.getURI(), retryCount});
+                throw new RuntimeException("Retry limit exceeded: Bitbucket Cloud API request for "+ httpRequest.getURI() + ", retryCount=" + retryCount);
             }
             LOGGER.log(Level.FINE, "Retrying Bitbucket Cloud API request for {0}, retryCount={1}", new Object[]{httpRequest.getURI(), retryCount});
             response = client.execute(host, httpRequest, requestContext);
