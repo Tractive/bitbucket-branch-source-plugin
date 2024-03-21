@@ -42,6 +42,7 @@ import jenkins.authentication.tokens.api.AuthenticationTokens;
 import jenkins.model.Jenkins;
 import jenkins.scm.api.SCMSourceOwner;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 
@@ -60,18 +61,18 @@ class BitbucketCredentials {
                                                                @NonNull Class<T> type) {
         if (StringUtils.isNotBlank(id) && context != null) {
             return CredentialsMatchers.firstOrNull(
-                    CredentialsProvider.lookupCredentials(
-                            type,
-                            context,
-                            context instanceof Queue.Task
-                                    ? Tasks.getDefaultAuthenticationOf((Queue.Task) context)
-                                    : ACL.SYSTEM,
-                            URIRequirementBuilder.fromUri(serverUrl).build()
-                    ),
-                    CredentialsMatchers.allOf(
-                            CredentialsMatchers.withId(id),
-                            CredentialsMatchers.anyOf(CredentialsMatchers.instanceOf(type))
-                    )
+                CredentialsProvider.lookupCredentials(
+                    type,
+                    context,
+                    context instanceof Queue.Task
+                        ? Tasks.getDefaultAuthenticationOf((Queue.Task) context)
+                        : ACL.SYSTEM,
+                    URIRequirementBuilder.fromUri(serverUrl).build()
+                ),
+                CredentialsMatchers.allOf(
+                    CredentialsMatchers.withId(id),
+                    CredentialsMatchers.anyOf(CredentialsMatchers.instanceOf(type))
+                )
             );
         }
         return null;
@@ -87,13 +88,13 @@ class BitbucketCredentials {
             return result;
         }
         result.includeMatchingAs(
-                context instanceof Queue.Task
-                        ? Tasks.getDefaultAuthenticationOf((Queue.Task) context)
-                        : ACL.SYSTEM,
-                context,
-                StandardCredentials.class,
-                URIRequirementBuilder.fromUri(serverUrl).build(),
-                AuthenticationTokens.matcher(BitbucketAuthenticator.authenticationContext(serverUrl))
+            context instanceof Queue.Task
+                ? Tasks.getDefaultAuthenticationOf((Queue.Task) context)
+                : ACL.SYSTEM,
+            context,
+            StandardCredentials.class,
+            URIRequirementBuilder.fromUri(serverUrl).build(),
+            AuthenticationTokens.matcher(BitbucketAuthenticator.authenticationContext(serverUrl))
         );
         return result;
     }
@@ -105,20 +106,27 @@ class BitbucketCredentials {
         if (!value.isEmpty()) {
             AccessControlled contextToCheck = context == null ? Jenkins.get() : context;
             contextToCheck.checkPermission(CredentialsProvider.VIEW);
-            if (CredentialsMatchers.firstOrNull(
-                    CredentialsProvider.lookupCredentials(
-                            StandardCertificateCredentials.class,
-                            context,
-                            context instanceof Queue.Task ? Tasks.getDefaultAuthenticationOf((Queue.Task) context) : ACL.SYSTEM,
-                            URIRequirementBuilder.fromUri(serverUrl).build()),
-                    CredentialsMatchers.allOf(
-                            CredentialsMatchers.withId(value),
-                            AuthenticationTokens.matcher(BitbucketAuthenticator.authenticationContext(serverUrl))
-                    )
-            ) != null) {
+            final StandardCredentials credentials = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(
+                    StandardCredentials.class,
+                    context,
+                    context instanceof Queue.Task ? Tasks.getDefaultAuthenticationOf((Queue.Task) context) : ACL.SYSTEM,
+                    URIRequirementBuilder.fromUri(serverUrl).build()),
+                CredentialsMatchers.allOf(
+                    CredentialsMatchers.withId(value),
+                    AuthenticationTokens.matcher(BitbucketAuthenticator.authenticationContext(serverUrl))
+                )
+            );
+
+            if (credentials == null) {
+                return FormValidation.error("No matching credentials are available");
+            } else if (credentials instanceof StandardCertificateCredentials) {
                 return FormValidation.warning("A certificate was selected. You will likely need to configure Checkout over SSH.");
+            } else if (credentials instanceof StringCredentials) {
+                return FormValidation.warning("A auth token was selected. You will likely need to configure Checkout over SSH.");
+            } else {
+                return FormValidation.ok();
             }
-            return FormValidation.ok();
         } else {
             return FormValidation.warning("Credentials are required for build notifications");
         }
