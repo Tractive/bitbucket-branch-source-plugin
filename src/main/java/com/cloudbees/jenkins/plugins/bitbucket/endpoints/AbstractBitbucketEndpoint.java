@@ -67,6 +67,8 @@ public abstract class AbstractBitbucketEndpoint extends AbstractDescribableImpl<
      */
     private String bitbucketJenkinsRootUrl;
 
+    private boolean utilizeBranchInformationFromEvents;
+
     /**
      * Constructor.
      *
@@ -131,6 +133,15 @@ public abstract class AbstractBitbucketEndpoint extends AbstractDescribableImpl<
         } else {
             this.bitbucketJenkinsRootUrl = null;
         }
+    }
+
+    public boolean isUtilizeBranchInformationFromEvents() {
+        return utilizeBranchInformationFromEvents;
+    }
+
+    @DataBoundSetter
+    public void setUtilizeBranchInformationFromEvents(boolean utilizeBranchInformationFromEvents) {
+        this.utilizeBranchInformationFromEvents = utilizeBranchInformationFromEvents;
     }
 
     /**

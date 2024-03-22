@@ -11,4 +11,7 @@
     </f:entry>
     <st:include class="${descriptor.clazz}" page="manage-hooks-detail.jelly" optional="true"/>
   </f:optionalBlock>
+  <f:entry field="utilizeBranchInformationFromEvents">
+    <f:checkbox title="${%Utilize branch information from events}" default="true"/>
+  </f:entry>
 </j:jelly>
