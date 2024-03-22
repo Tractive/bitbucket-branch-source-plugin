@@ -67,6 +67,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.io.ObjectStreamException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -558,6 +559,7 @@ public class BitbucketSCMSource extends SCMSource {
             listener.getLogger().format("Repository type: %s%n", WordUtils.capitalizeFully(repositoryType != null ? repositoryType.name() : "Unknown"));
 
             // populate the request with its data sources
+            AbstractBitbucketEndpoint endpoint = BitbucketEndpointConfiguration.get().findEndpoint(serverUrl);
             if (request.isFetchPRs()) {
                 request.setPullRequests(new LazyIterable<BitbucketPullRequest>() {
                     @Override
@@ -580,7 +582,7 @@ public class BitbucketSCMSource extends SCMSource {
                     @Override
                     protected Iterable<BitbucketBranch> create() {
                         try {
-                            if (event instanceof HasBranches) {
+                            if (endpoint != null && endpoint.isUtilizeBranchInformationFromEvents() && event instanceof HasBranches) {
                                 return getBitbucketBranchFromEvent((HasBranches) event, listener);
                             }
 
@@ -623,10 +625,12 @@ public class BitbucketSCMSource extends SCMSource {
     }
 
     private Iterable<BitbucketBranch> getBitbucketBranchFromEvent(@NonNull HasBranches event, @NonNull TaskListener listener) throws InterruptedException {
+        final PrintStream logger = listener.getLogger();
+        logger.println("Adding branches from event:");
         final Iterable<BitbucketBranch> branches = event.getBranches(BitbucketSCMSource.this);
 
         for (BitbucketBranch branch : branches) {
-            listener.getLogger().printf("Adding branch %s from event%n", branch.getName());
+            logger.printf("    Adding branch %s%n", branch.getName());
         }
 
         return branches;
@@ -1320,8 +1324,8 @@ public class BitbucketSCMSource extends SCMSource {
 
             String serverUrlFallback = BitbucketCloudEndpoint.SERVER_URL;
             // if at least one bitbucket server is configured use it instead of bitbucket cloud
-            if(BitbucketEndpointConfiguration.get().getEndpointItems().size() > 0){
-               serverUrlFallback =  BitbucketEndpointConfiguration.get().getEndpointItems().get(0).value;
+            if (BitbucketEndpointConfiguration.get().getEndpointItems().size() > 0) {
+                serverUrlFallback = BitbucketEndpointConfiguration.get().getEndpointItems().get(0).value;
             }
 
             serverUrl = StringUtils.defaultIfBlank(serverUrl, serverUrlFallback);
