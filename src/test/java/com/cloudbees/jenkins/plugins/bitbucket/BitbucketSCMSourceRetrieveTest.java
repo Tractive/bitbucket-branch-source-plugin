@@ -164,7 +164,7 @@ public class BitbucketSCMSourceRetrieveTest {
         // Expect the observer to collect the branch and the PR
         Set<String> heads =
             headObserver.result().keySet().stream().map(SCMHead::getName).collect(Collectors.toSet());
-        assertThat(heads, Matchers.containsInAnyOrder("PR-" + PR_ID, SOURCE_BRANCH_NAME, DESTINATION_BRANCH_NAME));
+        assertThat(heads, Matchers.containsInAnyOrder("PR-" + PR_ID, SOURCE_BRANCH_NAME));
 
         // Ensures PR is properly initialized, especially fork-based PRs
         // see BitbucketServerAPIClient.setupPullRequest()
