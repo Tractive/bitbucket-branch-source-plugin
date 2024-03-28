@@ -26,13 +26,15 @@ public class BitbucketCloudApiFactory extends BitbucketApiFactory {
         boolean enableCache = false;
         int teamCacheDuration = 0;
         int repositoriesCacheDuration = 0;
+        int commitCacheDuration = 0;
         if (endpoint != null && endpoint instanceof BitbucketCloudEndpoint) {
             enableCache = ((BitbucketCloudEndpoint) endpoint).isEnableCache();
             teamCacheDuration = ((BitbucketCloudEndpoint) endpoint).getTeamCacheDuration();
             repositoriesCacheDuration = ((BitbucketCloudEndpoint) endpoint).getRepositoriesCacheDuration();
+            commitCacheDuration = ((BitbucketCloudEndpoint) endpoint).getCommitCacheDuration();
         }
         return new BitbucketCloudApiClient(
-                enableCache, teamCacheDuration, repositoriesCacheDuration,
+                enableCache, teamCacheDuration, repositoriesCacheDuration, commitCacheDuration,
                 owner, projectKey, repository, authenticator);
     }
 }

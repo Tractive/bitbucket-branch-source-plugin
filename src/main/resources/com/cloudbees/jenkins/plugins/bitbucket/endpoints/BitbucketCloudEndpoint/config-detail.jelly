@@ -8,6 +8,9 @@
     <f:entry title="${%How long to cache repositories, in minutes}" field="repositoriesCacheDuration">
       <f:number default="180" />
     </f:entry>
+    <f:entry title="${%How long to cache commits, in minutes}" field="commitCacheDuration">
+      <f:number default="1440" />
+    </f:entry>
     <f:validateButton title="${%Clear caches}" method="clear" />
     <f:validateButton title="${%Show statistics}" method="showStats" />
   </f:optionalBlock>

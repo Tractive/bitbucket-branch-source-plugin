@@ -168,13 +168,13 @@ public class BitbucketCloudApiClient implements BitbucketApi {
     }
 
     @Deprecated
-    public BitbucketCloudApiClient(boolean enableCache, int teamCacheDuration, int repositoriesCacheDuration,
+    public BitbucketCloudApiClient(boolean enableCache, int teamCacheDuration, int repositoriesCacheDuration, int commitCacheDuration,
                                    String owner, String repositoryName, StandardUsernamePasswordCredentials credentials) {
-        this(enableCache, teamCacheDuration, repositoriesCacheDuration, owner, null, repositoryName,
+        this(enableCache, teamCacheDuration, repositoriesCacheDuration, commitCacheDuration, owner, null, repositoryName,
                 new BitbucketUsernamePasswordAuthenticator(credentials));
     }
 
-    public BitbucketCloudApiClient(boolean enableCache, int teamCacheDuration, int repositoriesCacheDuration,
+    public BitbucketCloudApiClient(boolean enableCache, int teamCacheDuration, int repositoriesCacheDuration, int commitCacheDuration,
             String owner, String projectKey, String repositoryName, BitbucketAuthenticator authenticator) {
         this.authenticator = authenticator;
         this.owner = owner;
@@ -184,6 +184,7 @@ public class BitbucketCloudApiClient implements BitbucketApi {
         if (enableCache) {
             cachedTeam.setExpireDuration(teamCacheDuration, MINUTES);
             cachedRepositories.setExpireDuration(repositoriesCacheDuration, MINUTES);
+            cachedCommits.setExpireDuration(commitCacheDuration, MINUTES);
         }
 
         // Create Http client

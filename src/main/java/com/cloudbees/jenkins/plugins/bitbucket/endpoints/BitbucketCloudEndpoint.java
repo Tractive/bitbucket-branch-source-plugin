@@ -35,6 +35,7 @@ import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.verb.POST;
 
 /**
@@ -68,8 +69,13 @@ public class BitbucketCloudEndpoint extends AbstractBitbucketEndpoint {
      */
     private final int repositoriesCacheDuration;
 
+    /**
+     * How long, in minutes, to cache the commit response.
+     */
+    private final int commitCacheDuration;
+
     public BitbucketCloudEndpoint(boolean manageHooks, @CheckForNull String credentialsId) {
-        this(false, 0, 0, manageHooks, credentialsId);
+        this(false, 0, 0, 0, manageHooks, credentialsId);
     }
 
     @Restricted(NoExternalUse.class) // Used for testing
@@ -84,17 +90,19 @@ public class BitbucketCloudEndpoint extends AbstractBitbucketEndpoint {
      * @param enableCache   {@code true} if caching should be used to reduce requests to Bitbucket.
      * @param teamCacheDuration How long, in minutes, to cache the team response.
      * @param repositoriesCacheDuration How long, in minutes, to cache the repositories response.
+     * @param commitCacheDuration How long, in minutes, to cache the commit response.
      * @param manageHooks   {@code true} if and only if Jenkins is supposed to auto-manage hooks for this end-point.
      * @param credentialsId The {@link StandardCredentials#getId()} of the credentials to use for
      *                      auto-management of hooks.
      */
     @DataBoundConstructor
     public BitbucketCloudEndpoint(boolean enableCache, int teamCacheDuration,
-        int repositoriesCacheDuration, boolean manageHooks, @CheckForNull String credentialsId) {
+        int repositoriesCacheDuration, int commitCacheDuration, boolean manageHooks, @CheckForNull String credentialsId) {
         super(manageHooks, credentialsId);
         this.enableCache = enableCache;
         this.teamCacheDuration = teamCacheDuration;
         this.repositoriesCacheDuration = repositoriesCacheDuration;
+        this.commitCacheDuration = commitCacheDuration;
     }
 
     public boolean isEnableCache() {
@@ -107,6 +115,10 @@ public class BitbucketCloudEndpoint extends AbstractBitbucketEndpoint {
 
     public int getRepositoriesCacheDuration() {
         return repositoriesCacheDuration;
+    }
+
+    public int getCommitCacheDuration() {
+        return commitCacheDuration;
     }
 
     /**
